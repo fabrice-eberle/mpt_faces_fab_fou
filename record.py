@@ -1,30 +1,89 @@
-import numpy as np
 import cv2 as cv
 import os
-import gdown
-import uuid
 import csv
-from common import ROOT_FOLDER
-from cascade import create_cascade
+import argparse
+import shutil
 
-# Quellen
-#  - How to open the webcam: https://docs.opencv.org/4.x/dd/d43/tutorial_py_video_display.html
-#  - How to run the detector: https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_objdetect/py_face_detection/py_face_detection.html
-#  - How to download files from google drive: https://github.com/wkentaro/gdown
-#  - How to save an image with OpenCV: https://docs.opencv.org/3.4/d4/da8/group__imgcodecs.html
-#  - How to read/write CSV files: https://docs.python.org/3/library/csv.html
-#  - How to create new folders: https://www.geeksforgeeks.org/python-os-mkdir-method/
 
-# This is the data recording pipeline
-def record(args):
-    # TODO: Implement the recording stage of your pipeline
-    #   Create missing folders before you store data in them (os.mkdir)
-    #   Open The OpenCV VideoCapture Device to retrieve live images from your webcam (cv.VideoCapture)
-    #   Initialize the Haar feature cascade for face recognition from OpenCV (cv.CascadeClassifier)
-    #   If the cascade file (haarcascade_frontalface_default.xml) is missing, download it from google drive
-    #   Run the cascade on every image to detect possible faces (CascadeClassifier::detectMultiScale)
-    #   If there is exactly one face, write the image and the face position to disk in two seperate files (cv.imwrite, csv.writer)
-    #   If you have just saved, block saving for 30 consecutive frames to make sure you get good variance of images.
-    if args.folder is None:
-        print("Please specify folder for data to be recorded into")
+def record():
+    # argument parser for terminal prompts
+    parser = argparse.ArgumentParser()
+    parser.add_argument("action", choices=["record"])
+    parser.add_argument("--folder", required=True)
+    args = parser.parse_args()
+
+    # check if objects folder exists, if not create
+    folder_path = os.path.join("objects", args.folder)
+    if os.path.exists(folder_path):
+        # delete existing folder
+        shutil.rmtree(folder_path)
+    os.makedirs(folder_path)
+
+    # activate webcam, if not end skript
+    cam = cv.VideoCapture(0)
+    if not cam.isOpened():
+        print("error opening camera")
         exit()
+
+    # using face cascade to detect faces
+    face_cascade = cv.CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+    # count every detected face with counter
+    face_counter = 0
+
+    # loop for opening the cam til user interrupts 
+    while True:
+        # reads cam frame-by-frame
+        # cam returns a tuple (ret, frame) ret = boolean whether the frame was read successfully
+        # ret is not necesarry in the skript thats why its replaces to "_"
+        _, frame = cam.read()
+
+        # single frame convert to grayscale ( necesarry for detecting faces with haarcascades )
+        gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+
+        # function returns a LIST of rectangle-coordinates in which faces are recognized. 
+        # IF len(faces) > 0 ==> face detected
+        # ((Parameters are scaling factors to find nearby rectangles. They are specified in the read me.))
+        faces = face_cascade.detectMultiScale(gray_frame, 1.3, 5)
+
+        # faces = list of coordinates where a face was detected
+        if len(faces) > 0:
+            #save face picture with path and name
+            pic_name = os.path.join(folder_path, f"face_{face_counter}.png")
+            cv.imwrite(pic_name, frame)
+
+            # save face coordinates to CSV with same name
+            csv_name = os.path.join(folder_path, f"face_{face_counter}.csv")
+            with open(csv_name, "w", newline="") as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(["x", "y", "width", "height"])  # Write column as headers
+                for (x, y, w, h) in faces:
+                    writer.writerow([x, y, w, h])
+
+            # iterate counter for detecting next face
+            face_counter += 1
+
+        # blue rectangles in the detected faces to veryfy the detection
+        # should only be on the live cam video an not on the saved picture
+        for (x, y, w, h) in faces:
+            cv.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+
+        # open window for live cam video
+        cv.imshow('Face Detection', frame)
+
+        # user can see which picture was taken. skript waits after detecting and saving the picture
+        # for 500 milliseconds (0,5sek) before reading next cam frame
+        # if the if condition sets to "TRUE" (when ´q´is pressed),
+        # the "break" stoops only the while TRUE loop from line 36
+        if cv.waitKey(500) & 0xFF == ord('q'):  
+            break
+
+    # camera is released to the system again
+    cam.release()
+
+    # close cam window
+    cv.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    record()
