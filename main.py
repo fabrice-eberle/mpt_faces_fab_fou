@@ -5,6 +5,7 @@ from train import train
 from live import live
 
 # NOTE: This is the main file, you propably don't need to change anything here
+# test Fabrice git
 
 # Setup an argument parser for control via command line
 parser = argparse.ArgumentParser(
