@@ -1,5 +1,6 @@
 .idea/
 .readme.md.swp
 .record.py.swp
+.model.pt
 __pycache__/
 objects/

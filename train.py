@@ -1,3 +1,4 @@
+import argparse
 import torch
 import torch.nn
 from torch.utils.data import DataLoader
@@ -14,6 +15,7 @@ from transforms import TrainingTransform, ValidationTransform
 
 BATCH_SIZE = 8
 
+
 def train(args):
     # Setup the ImageFolder Dataset
     trainset = torchvision.datasets.ImageFolder(
@@ -27,8 +29,12 @@ def train(args):
     nClasses = len(trainset.classes)
 
     # Create data loader
-    trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True)
-    validationloader = DataLoader(validationset, batch_size=BATCH_SIZE, shuffle=True)
+    trainloader = DataLoader(
+        trainset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True
+    )
+    validationloader = DataLoader(
+        validationset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True
+    )
 
     # Create the network, the optimizer and the loss function
     net = Net(nClasses)
@@ -57,8 +63,8 @@ def train(args):
                 optim.zero_grad()
 
                 out = net(batch)
-                assert(out.shape[0] == BATCH_SIZE)
-                assert(out.shape[1] == nClasses)
+                assert out.shape[0] == BATCH_SIZE
+                assert out.shape[1] == nClasses
 
                 bacc.update(out, labels)
 
@@ -75,3 +81,11 @@ def train(args):
 
         # Save a checkpoint after each epoch
         torch.save({"model": net.state_dict(), "classes": trainset.classes}, "model.pt")
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--epochs", type=int, default=10)
+
+args = parser.parse_args()
+
+train(args)

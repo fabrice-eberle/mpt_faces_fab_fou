@@ -1,7 +1,7 @@
 import torch
 
 # NOTE: This will be the calculation of balanced accuracy for your classification task
-# The balanced accuracy is defined as the average accuracy for each class. 
+# The balanced accuracy is defined as the average accuracy for each class.
 # The accuracy for an indiviual class is the ratio between correctly classified example to all examples of that class.
 # The code in train.py will instantiate one instance of this class.
 # It will call the reset methos at the beginning of each epoch. Use this to reset your
@@ -12,27 +12,29 @@ import torch
 # Then, in the getBACC method, calculate the balanced accuracy by first calculating each individual accuracy
 # and then taking the average.
 
+
 # Balanced Accuracy
 class BalancedAccuracy:
     def __init__(self, nClasses):
         # TODO: Setup internal variables
         # NOTE: It is good practive to all reset() from here to make sure everything is properly initialized
+        self.nClasses = nClasses
+        self.reset()
 
     def reset(self):
-        # TODO: Reset internal states.
-        # Called at the beginning of each epoch
+        self.correct = [0] * self.nClasses
+        self.total = [0] * self.nClasses
 
     def update(self, predictions, groundtruth):
-        # TODO: Implement the update of internal states
-        # based on current network predictios and the groundtruth value.
-        #
-        # Predictions is a Tensor with logits (non-normalized activations)
-        # It is a BATCH_SIZE x N_CLASSES float Tensor. The argmax for each samples
-        # indicated the predicted class.
-        #
-        # Groundtruth is a BATCH_SIZE x 1 long Tensor. It contains the index of the
-        # ground truth class.
+        _, predicted = torch.max(predictions, 1)
+        for i in range(len(groundtruth)):
+            self.total[groundtruth[i].item()] += 1
+            if predicted[i] == groundtruth[i]:
+                self.correct[groundtruth[i].item()] += 1
 
     def getBACC(self):
-        # TODO: Calculcate and return balanced accuracy 
-        # based on current internal state
+        accuracies = [
+            self.correct[i] / self.total[i] if self.total[i] > 0 else 0
+            for i in range(self.nClasses)
+        ]
+        return sum(accuracies) / len(accuracies)  # based on current internal state
