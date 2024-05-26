@@ -31,6 +31,9 @@ def record():
     # count every detected face with counter
     face_counter = 0
 
+    # counter to skip frames after saving an image
+    skip_counter = 0
+
     # loop for opening the cam til user interrupts 
     while True:
         # reads cam frame-by-frame
@@ -47,7 +50,7 @@ def record():
         faces = face_cascade.detectMultiScale(gray_frame, 1.3, 5)
 
         # faces = list of coordinates where a face was detected
-        if len(faces) > 0:
+        if len(faces) > 0 and skip_counter == 0:
             #save face picture with path and name
             pic_name = os.path.join(folder_path, f"face_{face_counter}.png")
             cv.imwrite(pic_name, frame)
@@ -62,6 +65,13 @@ def record():
 
             # iterate counter for detecting next face
             face_counter += 1
+
+            #set skip counter to 30
+            skip_counter = 30
+        
+        # decrease skip counter if greater than 0
+        if skip_counter > 0:
+            skip_counter -= 1
 
         # blue rectangles in the detected faces to veryfy the detection
         # should only be on the live cam video an not on the saved picture
