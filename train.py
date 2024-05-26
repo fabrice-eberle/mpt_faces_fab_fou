@@ -79,8 +79,8 @@ def train(args):
                     f"{label}   {epoch+1:3}/{int(args.epochs)}   loss={100.0 * total_loss / total_cnt:10.5f}    bacc={100.0 * bacc.getBACC():.2f}%"
                 )
 
-        # Save a checkpoint after each epoch
-        torch.save({"model": net.state_dict(), "classes": trainset.classes}, "model.pt")
+                # Save a checkpoint after each epoch
+                torch.save({"model": net.state_dict(), "classes": trainset.classes}, "model.pth")
 
 
 parser = argparse.ArgumentParser()

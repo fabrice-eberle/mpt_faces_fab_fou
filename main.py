@@ -1,6 +1,6 @@
 import argparse
 from record import record
-from crop import crop
+from crop import crop_faces
 from train import train
 from live import live
 
@@ -27,7 +27,7 @@ if args.mode == "record":
     record(args)
 
 if args.mode == "crop":
-    crop(args)
+    crop_faces(args)
 
 if args.mode == "train":
     train(args)
